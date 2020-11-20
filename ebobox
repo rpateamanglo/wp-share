@@ -1,0 +1,36 @@
+//LOGIN EBOX
+				pageLoadTimeout(100000);
+				openChrome(ebox_portal); https://eboxprdcsc.corebanking.intra.absa.co.za/csc/login.jsp
+				$(byXpath("//input[@name='username']")).sendKeys(ebox_login);
+				sleep(1000);
+				$(byXpath("//input[@name='j_password']")).sendKeys(ebox_pass);
+				sleep(1000);
+				//$(byText("corp.dsarena.com")).click();//domain only present in uat
+				pageLoadTimeout(30000);
+				$(byXpath("/html/body/div[2]/form/div[2]/input")).click();//login
+
+				//TRANSACTION SEARCH
+				boolean ebox_load = false;
+				try{
+				ebox_load = $(byText("Transaction Search")).is(VISIBLE);
+				}catch(Exception e){
+					pageLoadTimeout(100000);
+					refresh();
+					try{
+						ebox_load = $(byText("Transaction Search")).is(VISIBLE);
+					}catch(Exception w){
+						ebox_load = false;
+					}
+				}
+
+				if(ebox_load){
+					//$(byText("Transaction Search")).click();
+					sleep(3000);
+					$(byXpath("//a[contains(text(),'Transaction Search')]")).click();
+					loginta.append("Login Successful");
+					loginta.newLine();
+
+					sleep(2000);
+
+
+				}
