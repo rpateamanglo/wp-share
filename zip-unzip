@@ -1,0 +1,40 @@
+import java.util.zip.*
+  
+String zipFileName = "file.zip"  
+String inputDir = "logs"
+def outputDir = "zip"
+
+//Zip files
+  
+ZipOutputStream zipFile = new ZipOutputStream(new FileOutputStream(zipFileName))  
+new File(inputDir).eachFile() { file -> 
+  //check if file
+  if (file.isFile()){
+    zipFile.putNextEntry(new ZipEntry(file.name))
+    def buffer = new byte[file.size()]  
+    file.withInputStream { 
+      zipFile.write(buffer, 0, it.read(buffer))  
+    }  
+    zipFile.closeEntry()
+  }
+}  
+zipFile.close()  
+
+
+//UnZip archive
+
+def zip = new ZipFile(new File(zipFileName))
+zip.entries().each{  
+  if (!it.isDirectory()){
+    def fOut = new File(outputDir+ File.separator + it.name)
+    //create output dir if not exists
+    new File(fOut.parent).mkdirs()
+    def fos = new FileOutputStream(fOut)
+    //println "name:${it.name}, size:${it.size}"
+    def buf = new byte[it.size]
+    def len = zip.getInputStream(it).read(buf) //println zip.getInputStream(it).text
+    fos.write(buf, 0, len)
+    fos.close()
+  }
+}
+zip.close()
