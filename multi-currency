@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<secrets-vault-get alias="ebox" />
+
+
+<var-def name="bot_task_properties">
+	<datastore name="sfi_end_to_end">
+		<template>select * from @this</template>
+	</datastore>
+</var-def>
+
+<script><![CDATA[
+	def BOT_CONFIG = [:]
+	bot_task_properties.getWrappedObject().toList().each { property ->
+		BOT_CONFIG.put(property.get("name").toString(), property.get("value").toString())
+	}
+	sys.defineVariable("BOT_CONFIG", BOT_CONFIG)
+]]></script>
+	
+	<robotics-flow>
+<robot driver="universal" name="driver" start-in-private="false" close-on-completion="true">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+			
+			<script><![CDATA[
+			
+			//apache excel
+			import org.apache.poi.xssf.usermodel.*;
+			import org.apache.poi.ss.usermodel.*;
+			import org.apache.poi.hssf.usermodel.*;
+			import java.text.SimpleDateFormat;
+			import org.apache.poi.ss.usermodel.DateUtil;
+			
+			//rounding of double
+			import java.text.DecimalFormat;
+			import java.math.BigDecimal; 
+			import java.math.*;
+			
+			String file_path_ds = "Q:\\ROBOTICS\\SFI End-to-End\\config\\Scripts\\misc\\Indicativerates 30 06 2020.xls"
+			
+			//DATASTORE
+			String currency_list_str = (BOT_CONFIG.getWrappedObject().get("currency_list").toString());
+			
+			currency_list = currency_list_str.split(",");
+			
+			//READ INDICATIVE RATES SHEET
+			HashMap<String, String> par_avant_hash = new HashMap<String, String>();
+			
+			File xls_file = new File(file_path_ds);
+			FileInputStream fis = new FileInputStream(xls_file);
+			HSSFWorkbook wb = new HSSFWorkbook(fis);
+			HSSFSheet sheet = wb.getSheet("RATE0104"); 
+			int num_of_rows = sheet.getLastRowNum();
+			DecimalFormat df4 = new DecimalFormat("#.####")
+			
+			String date_cell = sheet.getRow(3).getCell(6,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			log.info("Date in file: "+date_cell);
+			
+
+			for(int i = 10; i < 34; i++){					
+				
+				Cell check_par = sheet.getRow(i).getCell(10,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				
+				if(check_par != null){
+					//get par from sheet
+					double par_avant_round = sheet.getRow(i).getCell(10,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL).getNumericCellValue();
+					//format par
+					String str_par_avant_round = df4.format(par_avant_round);
+					BigDecimal  big = new BigDecimal(str_par_avant_round);
+					big = big.setScale(2, RoundingMode.HALF_UP);
+					double_val = big.doubleValue();
+					String par_df2 = double_val;
+					//get currency from sheet
+					String currency = sheet.getRow(i).getCell(3,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+					String curr = currency.split("\\s+");						
+					String currency_1 = curr[1,2,3];
+
+					//compare currencies
+					for(int j = 0; j < currency_list.size(); j++){
+						if(currency_1.equals(currency_list[j].trim())){
+							log.info("currency: "+currency_1+"    par: "+par_df2);
+							par_avant_hash.put(currency_1,par_df2);
+						}
+					}
+
+				}
+			}
+			wb.close();
+			
+			/////
+			for (String currency : par_avant_hash.keySet()) {
+				log.info("Currency: "+ currency);
+				log.info("Par: "+ par_avant_hash.get(currency));
+			}
+			
+			]]></script>
+	
+	</robot>
+</robotics-flow>
+	
+    <export include-original-data="true">
+</export>
+
+</config>	
