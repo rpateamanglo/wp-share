@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+	
+	<robotics-flow>
+<robot driver="universal" name="driver" start-in-private="false" close-on-completion="true">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+			
+			
+			<script><![CDATA[
+			
+				ArrayList zipFilePaths = new ArrayList();
+
+				zipFilePaths.add("C:\\Users\\rb-mu_robot_vpc_01\\Desktop\\dulhekasehna\\suhanalagtahain.txt")
+				zipFilePaths.add("C:\\Users\\rb-mu_robot_vpc_01\\Desktop\\dulhekasehna\\dulhan ka to.txt")
+				zipFilePaths.add("C:\\Users\\rb-mu_robot_vpc_01\\Desktop\\dulhekasehna\\dil diwana lagta hain.txt")
+				
+				sys.defineVariable("zipFilePaths",zipFilePaths);
+				
+			
+			]]></script>
+	
+	</robot>
+</robotics-flow>
+
+<file action="write" path="C:\\Users\\rb-mu_robot_vpc_01\\Desktop\\dulhekasehna\\afreen.zip" type="binary">
+	<zip>
+		<loop item="path" index="i">
+		   <list><var name="zipFilePaths"/></list>
+		   <body>
+			   <zip-entry name="${sys.getFilename(path.toString())}">
+				   <file path="${path}" type="binary"/>
+			   </zip-entry>
+		   </body>
+		</loop>
+	</zip>
+</file>
+
+	
+    <export include-original-data="true">
+</export>
+
+</config>
+
