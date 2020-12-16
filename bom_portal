@@ -1,0 +1,112 @@
+Internet Explorer Config: https://doc.workfusion.com/enterprise/docs/iac/rpa/developer-guide/configure-internet-explorer/#docsNav
+
+int count = 0;
+					while(!java_form_presence_bool && count < 50){
+			
+						try{
+							$(byImage("${imagePath}/upload_screen.jpg")).getCoordinates();
+							java_form_presence_bool = true;
+							log.info("Login Form Found");
+							break;
+						}catch(Exception e){
+							java_form_presence_bool = false;
+							log.info("Dialog Found!");
+						}
+						
+						
+						//java security warning(continue)
+						sleep(2000);
+						boolean java_update_check_bool = false;
+						try{ 
+							$(byImage("${imagePath}/security_warning_run.jpg")).getCoordinates();
+							println("aaajaja")
+							java_update_check_bool = true;				
+						}catch(Exception e){
+							//println(e)
+							java_update_check_bool = false;
+						}
+						if(java_update_check_bool){
+							$(byImage("${imagePath}/security_warning_run_continue.jpg")).click();
+							log.info("java security warning(continue) passed");			
+						}
+						
+						//java security warning(run)
+						boolean java_security_check_bool_0 = false;
+						try{
+							$(byImage("${imagePath}/security_warning_run_checkbox.jpg")).getCoordinates();
+							java_security_check_bool_0 = true;
+						}catch(Exception e){
+							java_security_check_bool_0 = false;			
+						}
+						
+						if(java_security_check_bool_0){	
+							//click on accept checkbox
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.SPACE); 
+							sleep(1000);
+							//click on run
+							$(byImage("${imagePath}/security_warning_run_checkbox_run.jpg")).click();
+							log.info("java security warning(run) passed");	
+						}
+
+						
+						
+						//java security dialog(allow)
+						boolean java_update_check_bool_1 = false;
+						try{
+							$(byImage("${imagePath}/security_warning_allow.jpg")).getCoordinates();
+							java_update_check_bool_1 = true;				
+						}catch(Exception e){
+							java_update_check_bool_1 = false;
+						}
+						if(java_update_check_bool_1){
+							$(byImage("${imagePath}/security_warning_allow_ok.jpg")).click();
+							log.info("java security dialog(allow) passed");			
+						}
+
+						
+				
+						//error dialog
+						boolean error_dialog_bool = false;
+						try{
+							$(byImage("${imagePath}/error.jpg")).getCoordinates();
+							error_dialog_bool = true;
+						}catch(Exception e){
+							error_dialog_bool = false;
+						}
+						if(error_dialog_bool){
+							log.info("Security Checks on ebox's Waste File Processing not passed");
+							break;
+						}
+						
+						count++;
+					}
+					
+					}
+					
+					//waste form presence
+					if(java_form_presence_bool){
+						
+						boolean java_add_bool = false;
+						try{
+							$(byImage("${imagePath}/upload_screen_add.jpg")).getCoordinates();
+							java_add_bool = true;				
+						}catch(Exception e){
+							java_add_bool = false;
+						}
+						if(java_add_bool){
+							//click on add button
+							$(byImage("${imagePath}/upload_screen_add.jpg")).click();
+							log.info("Add button clicked");	
+							
+							//add path of file to be uploaded 
+							sendKeys(Keys.chord(Keys.LEFT_CONTROL, 'a'));
+							sendKeys(Keys.ENTER);
+							
+						}
+					}
+														
+					
+				}
