@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://web-harvest.sourceforge.net/schema/1.0/config" scriptlang="groovy">
+
+<secrets-vault-get alias="ebox_uat" />
+
+
+<var-def name="bot_task_properties">
+	<datastore name="sfi_end_to_end">
+		<template>select * from @this</template>
+	</datastore>
+</var-def>
+
+<script><![CDATA[
+	def BOT_CONFIG = [:]
+	bot_task_properties.getWrappedObject().toList().each { property ->
+		BOT_CONFIG.put(property.get("name").toString(), property.get("value").toString())
+	}
+	sys.defineVariable("BOT_CONFIG", BOT_CONFIG)
+]]></script>
+	
+	<robotics-flow>
+<robot driver="universal" name="driver" start-in-private="false" close-on-completion="true">
+			<capability name ="SEARCH_ALL_WINDOWS" value="true"/>
+			<capability name="CLOSE_ALL_WINDOWS" value="false"/>
+			
+			
+			<script><![CDATA[
+				
+				//selenium
+				import java.util.concurrent.TimeUnit;
+				import org.openqa.selenium.By;
+				import org.openqa.selenium.ie.InternetExplorerDriver;
+
+				String ebox_portal = "https://eboxuatcsc.corebanking.intra.absa.co.za/csc/login.jsp"
+				String imagePath = "L:\\ROBOTICS\\SFI End-to-End\\config\\Lib\\waste_file_img\\"
+				
+				//SECRETS VAULT
+				Map entryMap = secureEntryMap.getWrappedObject();
+				com.freedomoss.crowdcontrol.webharvest.web.dto.SecureEntryDTO obj = entryMap.get("ebox_uat");
+				ebox_login = obj.getKey().toString();
+				ebox_pass = obj.getValue().toString();
+				
+				//webdriver settings
+				System.setProperty("webdriver.ie.driver", "L:\\ROBOTICS\\SFI End-to-End\\config\\Lib\\IEDriverServer_Win32_3.150.1\\IEDriverServer.exe");
+				
+				//Creating an object of InternetExplorerDriver
+				WebDriver driver=new InternetExplorerDriver();
+				driver.manage().window().maximize();
+				WebDriverWait wait = new WebDriverWait(driver, 10);
+
+				//Deleting all the cookies
+				driver.manage().deleteAllCookies();
+
+				//Specifiying pageLoadTimeout and Implicit wait
+				driver.manage().timeouts().pageLoadTimeout(40, TimeUnit.SECONDS);
+				driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+
+				//open ebox
+				driver.get(ebox_portal);
+
+				//login
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@name='username']")));
+				driver.findElement(By.xpath("//input[@name='username']")).clear();
+				driver.findElement(By.xpath("//input[@name='username']")).sendKeys(ebox_login);
+				driver.findElement(By.xpath("//input[@name='j_password']")).clear();
+				driver.findElement(By.xpath("//input[@name='j_password']")).sendKeys(ebox_pass);
+
+				//login button
+				WebElement login = driver.findElement(By.xpath("/html/body/div[2]/form/div[2]/input"));
+				login.click();
+				//driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+				
+				//WASTE FILE PROCESSING
+				boolean ebox_load = false;
+				try{
+					log.info("Searching for Waste File Processing");
+					wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Waste File Processing']")));
+					log.info("Waste File Processing Found");
+					ebox_load = true;
+				}catch(Exception e){
+					log.info("Waste File Processing not found. Refreshing")
+					driver.navigate().refresh();
+					//driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+					try{
+						wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[text()='Waste File Processing']")));
+					}catch(Exception w){
+						ebox_load = false;
+						log.info("Waste File Processing not found->"+w)
+					}
+				}
+				if(ebox_load){
+					//driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
+					//click on Waste File Processing
+					WebElement waste_file = driver.findElement(By.xpath("//*[text()='Waste File Processing']"));
+					waste_file.click();
+					//loginta.append("Login Successful");
+					//loginta.newLine();
+					log.info("Clicked on Waste File Processing");
+					
+					//UPLOAD WASTE FILE
+					//security warnings
+					boolean java_form_presence_bool = false;
+					//presence of upload screen
+					
+					
+					/////////
+					inDesktop{
+					int count = 0;
+					while(!java_form_presence_bool && count < 50){
+			
+						try{
+							$(byImage("${imagePath}/upload_screen.jpg")).getCoordinates();
+							java_form_presence_bool = true;
+							log.info("Login Form Found");
+							break;
+						}catch(Exception e){
+							java_form_presence_bool = false;
+							log.info("Dialog Found!");
+						}
+						
+						
+						//java security warning(continue)
+						sleep(2000);
+						boolean java_update_check_bool = false;
+						try{ 
+							$(byImage("${imagePath}/security_warning_run.jpg")).getCoordinates();
+							java_update_check_bool = true;				
+						}catch(Exception e){
+							//println(e)
+							java_update_check_bool = false;
+						}
+						if(java_update_check_bool){
+							$(byImage("${imagePath}/security_warning_run_continue.jpg")).click();
+							log.info("java security warning(continue) passed");			
+						}
+						
+						//java security warning(run)
+						boolean java_security_check_bool_0 = false;
+						try{
+							$(byImage("${imagePath}/security_warning_run_checkbox.jpg")).getCoordinates();
+							java_security_check_bool_0 = true;
+						}catch(Exception e){
+							java_security_check_bool_0 = false;			
+						}
+						
+						if(java_security_check_bool_0){	
+							//click on accept checkbox
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.SPACE); 
+							sleep(1000);
+							//click on run
+							$(byImage("${imagePath}/security_warning_run_checkbox_run.jpg")).click();
+							log.info("java security warning(run) passed");	
+						}
+
+						
+						
+						//java security dialog(allow)
+						boolean java_update_check_bool_1 = false;
+						try{
+							$(byImage("${imagePath}/security_warning_allow.jpg")).getCoordinates();
+							java_update_check_bool_1 = true;				
+						}catch(Exception e){
+							java_update_check_bool_1 = false;
+						}
+						if(java_update_check_bool_1){
+							$(byImage("${imagePath}/security_warning_allow_ok.jpg")).click();
+							log.info("java security dialog(allow) passed");			
+						}
+
+						
+				
+						//error dialog
+						boolean error_dialog_bool = false;
+						try{
+							$(byImage("${imagePath}/error.jpg")).getCoordinates();
+							error_dialog_bool = true;
+						}catch(Exception e){
+							error_dialog_bool = false;
+						}
+						if(error_dialog_bool){
+							log.info("Security Checks on ebox's Waste File Processing not passed");
+							break;
+						}
+						
+						count++;
+					}
+					
+					}
+					
+					//waste form presence
+					if(java_form_presence_bool){
+						
+						boolean java_add_bool = false;
+						try{
+							$(byImage("${imagePath}/upload_screen_add.jpg")).getCoordinates();
+							java_add_bool = true;				
+						}catch(Exception e){
+							java_add_bool = false;
+						}
+						//add button presence
+						if(java_add_bool){
+							//click on add button
+							$(byImage("${imagePath}/upload_screen_add.jpg")).click();
+							log.info("Add button clicked");	
+							
+							//select all files from waste folder
+							sleep(2000);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sendKeys(Keys.TAB);
+							sleep(2000);
+							sendKeys(Keys.chord(Keys.LEFT_CONTROL, 'a'));
+							sendKeys(Keys.ENTER);
+							
+							sleep(3000);
+							//check if today's file uploaded
+							boolean waste_file_date_error = false;
+							try{
+								switchToExistingWindow(new WindowDescriptor("", "(?i).*\\Qtoday's day code\\E.*", false, true).toString(), 60000);
+								waste_file_date_error = true;
+							}catch(Exception e){
+								waste_file_date_error = false;
+							}
+							
+							log.info("Waste Files Selected");
+							
+							
+							
+						}
+					}													
+					
+				}
+				
+				driver.close();
+
+			
+			]]></script>
+	
+	</robot>
+</robotics-flow>
+	
+    <export include-original-data="true">
+</export>
+
+</config>	
